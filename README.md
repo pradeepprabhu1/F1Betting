@@ -182,32 +182,42 @@ mvnw clean test
 
 
 
-💎 Financial Integrity & Currency Handling
-Built with clean architecture principles for maintainability, testability, and scalability.
 
-As per the requirement to handle bets specifically in EUR, the system implements the following:
+### Financial Integrity & Currency Handling
 
-Fixed-Point Arithmetic: The system strictly uses BigDecimal for all calculations. This prevents "Floating Point Inaccuracy" inherent in Double or Float types.
+As per the requirement to handle bets specifically in **EUR**, the system implements the following professional standards:
 
-Atomic Reconciliation: Stake deductions and prize additions are executed within ACID-compliant transactions.
+* **Fixed-Point Arithmetic**: The system strictly uses `BigDecimal` for all balance deductions and prize calculations. This prevents the "Floating Point Inaccuracy" bug inherent in `Double` or `Float` types, ensuring user balances are accurate to the decimal.
+* **Atomic Reconciliation**: The balance deduction (Stake) and balance addition (Prize) are executed within **ACID-compliant transactions**. If a prize calculation fails, the database state remains unchanged, preventing "ghost money" or balance leakage.
+* **Scalability**: While currently optimized for EUR, the Domain Layer is designed to support multi-currency expansion by abstracting the currency as a value object in future iterations.
 
-Scalability: The Domain Layer supports multi-currency expansion by abstracting currency as a value object.
 
-🚀 Production Roadmap: Scalability & Resilience
-1. Persistence Tier (Oracle/PostgreSQL)
-Transition: Replace H2 with PostgreSQL or Oracle for persistent storage and partitioning.
+## 🚀 Production Roadmap: Scalability & Resilience
 
-Concurrency Control: Implement Optimistic Locking (@Version) on the User entity to prevent race conditions during high-volume betting.
+While the current version uses an in-memory H2 database for demonstration, a production-grade system would evolve with the following strategy:
 
-2. Event-Driven Outcome Processing (Apache Kafka)
-The Workflow: A RaceResultService would consume a RaceFinished event from a Kafka Topic.
+### 1. Persistence Tier (Oracle/PostgreSQL)
 
-Scaling: Multiple BettingService instances can consume events in parallel to distribute load.
+**Transition**: Replace H2 with PostgreSQL or Oracle for ACID compliance and partitioning.
 
-3. Resilience: DLQ & Retry Strategy
-Retry Policy: Use Spring Retries with Exponential Backoff for transient database failures.
+**Concurrency Control**: Implement Optimistic Locking (`@Version`) on the User entity to prevent race conditions when thousands of bets are processed simultaneously.
 
-Dead Letter Queue (DLQ): Failed payouts after 3 retries are moved to a payout-dlq for manual investigation.
+### 2. Event-Driven Outcome Processing (Apache Kafka)
 
-4. API Resilience
-Circuit Breaker: Use Resilience4j on the OpenF1Adapter. If the F1 API is down, the system serves cached race data instead of crashing.
+In a high-load environment, processing race outcomes synchronously is a bottleneck.
+
+**The Workflow**: A `RaceResultService` would consume a `RaceFinished` event from a Kafka Topic.
+
+**Scaling**: Multiple instances of the `BettingService` can consume these events in parallel to distribute the payout calculation load.
+
+### 3. Resilience: DLQ & Retry Strategy
+
+To ensure that "no user loses money due to a timeout," we would implement a multi-stage retry strategy:
+
+- **Retry Policy**: Use Spring Retries with Exponential Backoff for transient database failures.
+- **Dead Letter Queue (DLQ)**: If a payout fails after 3 retries (e.g., a specific user account is locked), the message is moved to a `payout-dlq`.
+- **Alerting**: Monitor the DLQ via Prometheus/Grafana. Operations can manually reprocess or investigate these failed financial transactions without losing data.
+
+### 4. API Resilience
+
+**Circuit Breaker**: Use Resilience4j on the `OpenF1Adapter`. If the F1 API is down, the system should serve cached race data or a "Service Temporarily Unavailable" message instead of crashing.
