@@ -176,7 +176,7 @@ You can execute the entire test suite using the Maven Wrapper:
 
 ```bash
 mvnw clean test
-
+```
 
 **Built with clean architecture principles for maintainability, testability, and scalability.**
 
