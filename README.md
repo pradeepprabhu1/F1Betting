@@ -163,6 +163,31 @@ Verify the prize calculation (20 \times 3 = 60) and balance update (80 + 60 = 14
 
 ---
 
+### 📸 Proof of Execution (Validation)
+To verify the successful implementation of all 5 requirements, comprehensive evidence has been provided.
+
+Folder: /TestingEvidence
+
+### Evidence Included:
+
+**Initial State**: User balance at 100.00 EUR.
+
+**Bet Placement**: Balance deduction (100 -> 80) and PENDING status creation.
+
+**Outcome Processing**: Triggering the winner simulation for Session 9140.
+
+**Final Audit**: Database proof showing the status updated to WON and the balance reconciled to 140.00 EUR.
+
+### 🛠️ Data Provider Implementation: OpenF1 Simulation
+The OpenF1Adapter is designed to be production-ready while currently operating in Simulation Mode for assessment purposes.
+
+**Decision**: Simulation over RestTemplate
+While the code includes the scaffolding for RestTemplate to call https://api.openf1.org/v1/sessions, the live API integration is currently commented out.
+
+**Reason**: Consistent access to the OpenF1 API requires a **paid** key.
+
+**The Solution**: I implemented a simulateApiResponse() method that replicates the exact JSON structure of the OpenF1 API. This allows the reviewer to run and test the full business flow without external dependencies.
+
 ### 1. Test Categories
 * **Unit Tests (Service Layer)**: `BettingServiceTest` validates the 5-point requirement check for race outcomes. It ensures that prizes are calculated correctly ($Amount \times Odds$) and that user balances are updated atomically.
 * **Adapter Tests (External Layer)**: `OpenF1AdapterTest` verifies the simulation logic. It ensures that the system correctly filters race data by year, country, and type before mapping it to the Domain model.
